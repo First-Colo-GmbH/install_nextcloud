@@ -1,21 +1,21 @@
-Still a work in progress.
-Some features are missing
+[![Build Status](https://travis-ci.org/aalaesar/install_nextcloud.svg?branch=master)](https://travis-ci.org/aalaesar/install_nextcloud)
+# install_nextcloud
 
-**Missing functionalities**: Certbot
+This role installs and configures an Nextcloud instance for a debian/Ubuntu server.
 
-## install_nextcloud
+The role's main actions are:
+- [x] Packages dependencies installation.
+- [x] Database configuration (if located on the same host).
+- [x] Strengthened files permissions and ownership following Nextcloud recommendations.
+- [x] Web server configuration.
+- [x] Strengthened TLS configuration following _Mozilla SSL Configuration Generator_, intermediate profile.
 
-This role installs an _all in one_ nextcloud instance. Database, web services will be on the same host.
-
-Strenghtened permissions and ownership following Nextcloud recommandations.
-Strenghtened TLS configuration following _Mozilla SSL Configuration Generator_, intermediate profile.
-
-### Requirements
-#### Ansible version
+## Requirements
+### Ansible version
 Ansible 2.0
-#### Setup module:
+### Setup module:
 The role uses facts gathered by Ansible on the remote host. If you disable the Setup module in your playbook, the role will not work properly.
-#### Root access
+### Root access
 This role requires root access, so either configure it in your inventory files, run it in a playbook with a global `become: yes` or invoke the role in your playbook like:
 > playbook.yml:
 ```YAML
@@ -25,58 +25,78 @@ This role requires root access, so either configure it in your inventory files, 
       become: yes
 ```
 
-### Role Variables
+## Role Variables
 
 Role's variables (and their default value):
-#### Main configuration
+
+### Installation configuration
+> Source location will be calculated following channel, version and branch values.
 
 ```YAML
-nextcloud_version: 10.0.0
+nextcloud_channel: "releases"
 ```
-The nextcloud version you want to install.
+Defines the version channel you want to use for the installation
+Available : releases | prereleases | daily | latest
 ```YAML
-nextcloud_trusted_domain: {{ ansible_default_ipv4.address }} 
+nextcloud_version: 10.0.2
 ```
-The first domain you will use to access the nextcloud server.
+Specify the version name for channels **releases**, **prereleases** and **daily**. (it may not be numbers at all)
 ```YAML
-nextcloud_websrv: "apache"
+nextcloud_branch: "stable"
 ```
-The http server used by nextcloud. Available values are: **apache** or **nginx**.
+Specify the branch name for **daily** & **latest** channel
+```YAML
+nextcloud_repository: "https://download.nextcloud.com/server"
+```
+The Nextcloud's official repository. You may change it if you have the sources somewhere else.
+### Main configuration
+```YAML
+nextcloud_trusted_domain: ["{{ ansible_default_ipv4.address }}"]
+```
+The list of domains you will use to access the same Nextcloud instance.
+```YAML
+nextcloud_instance_name: "{{ nextcloud_trusted_domain | first }}"
+```
+The name of the Nextcloud instance. By default, the first element in the list of trusted domains
+```YAML
+nextcloud_websrv: "apache2"
+```
+The http server used by nextcloud. Available values are: **apache2** or **nginx**.
 ```YAML
 nextcloud_webroot: "/opt/nextcloud"
 ```
-The nextcloud root directory.
-
-**Warning: only the _parent_ directory must exist prior to installation.**
-
-Example for the default : only **/opt** must exist on the host.
+The Nextcloud root directory.
 ```YAML
 nextcloud_data_dir: "/var/ncdata"
 ```
-The nextcloud data directory. This directory will contain all the nextcloud files. Choose wisely.
+The Nextcloud data directory. This directory will contain all the Nextcloud files. Choose wisely.
 ```YAML
 nextcloud_admin_name: "admin"
 ```
-Defines the nextcloud admin's login.
+Defines the Nextcloud admin's login.
 ```YAML
 nextcloud_admin_pwd: "secret"
 ```
-Defines the nextcloud admin's password.
+Defines the Nextcloud admin's password.
 
-**Commented by default**
+**Not defined by default**
 
 If not defined by the user, a random password will be generated.
+### Database configuration
 ```YAML
-nextcloud_dl_url: "https://download.nextcloud.com/server/releases" # 
+nextcloud_install_db: true
 ```
-The nextcloud repository URL where to download the archive.
-#### Database configuration
+Whenever the role should install and configure a database on the same host.
+```YAML
+nextcloud_db_host: "127.0.0.1"
+```
+The database server's ip/hostname where Nextcloud's database is located.
 ```YAML
 nextcloud_db_backend: "mysql"
 ```
-Database backend used by nextcloud.
+Database type used by nextcloud.
 
-Supported values are: 
+Supported values are:
 - mysql
 - mariadb
 - pgsql _(PostgreSQL)_
@@ -84,31 +104,34 @@ Supported values are:
 ```YAML
 nextcloud_db_name: "nextcloud"
 ```
-The nextcloud instance's database name.
+The Nextcloud instance's database name.
 ```YAML
 nextcloud_db_admin: "ncadmin"
 ```
-The nextcloud instance's database user's login
+The Nextcloud instance's database user's login
 ```YAML
 nextcloud_db_pwd: "secret"
 ```
-The nextcloud instance's database user's password.
+The Nextcloud instance's database user's password.
 
-**Commented by default.**
+**Not defined by default.**
 
 If not defined by the user, a random password will be generated.
 
-#### TLS configuration
+### TLS configuration
 ```YAML
 nextcloud_tls_enforce: true
 ```
 Force http to https.
 ```YAML
+nextcloud_force_strong_apache_ssl: true
+```
+force strong ssl configuration in the virtualhost file
+```YAML
 nextcloud_tls_cert_method: "self-signed"
 ```
 Defines various method for retrieving a TLS certificate.
 - **self-signed**: generate a _one year_ self-signed certificate for the trusted domain on the remote host and store it in _/etc/ssl_.
-- **certbot**: Use _cerbot/letsencrypt_ to provide a signed certificate for the trusted domain.
 - **signed**: copy provided signed certificate for the trusted domain to the remote host or in /etc/ssl by default.
   Uses:
 ```YAML
@@ -117,7 +140,7 @@ Defines various method for retrieving a TLS certificate.
   # ^local path to the certificate's key.
   nextcloud_tls_src_cert_key: /local/path/to/cert/key
   # ^local path to the certificate.
-  
+
   # Optional:
   nextcloud_tls_cert: "/etc/ssl/{{ nextcloud_trusted_domain }}.crt"
   # ^remote absolute path to the certificate's key.
@@ -131,9 +154,11 @@ Defines various method for retrieving a TLS certificate.
   # ^remote absolute path to the certificate's key. mandatory
   nextcloud_tls_cert_key: /path/to/cert/key
   # ^remote absolute path to the certificate. mandatory
+  nextcloud_tls_cert_chain: /path/to/cert/chain
+  # ^remote absolute path to the certificate's full chain- used only by apache - Optional
 ```
 
-#### System configuration
+### System configuration
 ```YAML
 websrv_user: "www-data"
 ```
@@ -147,23 +172,23 @@ mysql_root_pwd: "secret"
 ```
 root password for the mysql server
 
-**Commented by default**
+**Not defined by default**
 
 If not defined by the user, and mysql/mariadb is installed during the run, a random password will be generated.
 
-#### Generated password
+### Generated password
 The role uses Ansible's password Lookup:
 - If a password is generated by the role, ansible stores it **localy** in **nextcloud_instances/{{ nextcloud_trusted_domain }}/** (relative to the working directory)
 - if the file already exist, it reuse its content
 - see http://docs.ansible.com/ansible/playbooks_lookups.html#the-password-lookup for more info
 
-### Dependencies
+## Dependencies
 
 none
 
-### Example Playbook
-#### Case 1: testing nextcloud
-In some case, you may want to deploy quickly many instances of Nextcloud on multiple hosts for testing purpose and don't want to tune the role's variables for each hosts: Just run the playbook without any additional variable (all default) !
+## Example Playbook
+### Case 1: Installing a quick Nextcloud demo
+In some case, you may want to deploy quickly many instances of Nextcloud on multiple hosts for testing/demo purpose and don't want to tune the role's variables for each hosts: Just run the playbook without any additional variable (all default) !
 
 ```YAML
 ---
@@ -172,22 +197,62 @@ In some case, you may want to deploy quickly many instances of Nextcloud on mult
    - role: aalaesar.install_nextcloud
 ```
 
-- This will install a nextcloud instance in /opt/nextcloud using apache2 and mysql.
+- This will install a Nextcloud 10.0.1 instance in /opt/nextcloud using apache2 and mysql.
 - it will be available at **https://{{ ansible default ipv4 }}**  using a self signed certificate.
 - Generated passwords are stored in **nextcloud_instances/{{ nextcloud_trusted_domain }}/** from your working directory.
 
+### Case 1.1: specifying the version channel, branch, etc.
+You can choose the version channel to download a specific version of nextcloud. Here's a variation of the previous case, this time installing the latest nightly in master.
+```YAML
+---
+- hosts: server
+  roles:
+   - role: aalaesar.install_nextcloud
+     nextcloud_channel: "latest"
+     nextcloud_branch: "master"
+```
 
-#### Case 2
-- An Ansible master want to install a new nextcloud instance at _cloud.example.tld_ on an existing server.
+### Case 2: Using letsencrypt with this role.
+This role is not designed to manage letsencrypt certificates. However you can still use your certificates with nextcloud.
+
+You must create first your certificates using a letsencrypt ACME client or an Ansible role like [ this one] (https://github.com/jaywink/ansible-letsencrypt)
+
+then call _install_nextcloud_ by setting `nextcloud_tls_cert_method: "installed"`
+
+Here 2 examples for apache and nginx (because their have slightly different configuration)
+```YAML
+---
+- hosts: apache_server
+  roles:
+   - role: aalaesar.install_nextcloud
+     nextcloud_trusted_domain:
+       - "example.com"
+     nextcloud_tls_cert_method: "installed"
+     nextcloud_tls_cert: "/etc/letsencrypt/live/example.com/cert.pem"
+     nextcloud_tls_cert_key: "/etc/letsencrypt/live/example.com/privkey.pem"
+     nextcloud_tls_cert_chain: "/etc/letsencrypt/live/example.com/fullchain.pem"
+
+- hosts: nginx_server
+  roles:
+    - role: aalaesar.install_nextcloud
+      nextcloud_trusted_domain:
+        - "example2.com"
+      nextcloud_tls_cert_method: "installed"
+      nextcloud_tls_cert: "/etc/letsencrypt/live/example2.com/fullchain.pem"
+      nextcloud_tls_cert_key: "/etc/letsencrypt/live/example2.com/privkey.pem"
+```
+### Case 3: integration to an existing system.
+- An Ansible master want to install a new Nextcloud instance at _cloud.example.tld_ on an existing server.
 - He already have a valid certificate for the trusted domain in /etc/nginx/certs/ installed
-- He can run the role with the following variables to install nextcloud accordingly to its existing infrastructure .
+- He can run the role with the following variables to install Nextcloud accordingly to its existing infrastructure .
 
 ```YAML
 ---
 - hosts: server
   roles:
    - role: aalaesar.install_nextcloud
-     nextcloud_trusted_domain: "cloud.example.tld"
+     nextcloud_trusted_domain:
+       - "cloud.example.tld"
      nextcloud_websrv: "nginx"
      nextcloud_admin_pwd: "secret007"
      nextcloud_webroot: "/var/www/nextcloud/"
@@ -201,5 +266,4 @@ In some case, you may want to deploy quickly many instances of Nextcloud on mult
 
 License
 -------
-
 BSD
