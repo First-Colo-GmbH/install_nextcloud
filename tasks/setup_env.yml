@@ -1,8 +1,8 @@
 ---
-# additionnal setup and fixes for OS depedent environment
+# additionnal setup and fixes for OS dependent environment
 - name: "controls nextcloud_trusted_domain type"
   fail:
-    msg: "New versions requires nextcloud_trusted_domain to be declared as a list."
+    msg: "New versions require nextcloud_trusted_domain to be declared as a list."
   when: nextcloud_trusted_domain is string
 
 - name: "[ENV] - ca-certificate are up to date"
@@ -21,16 +21,16 @@
 
   # fix for debian not using sudo :
   # defining if sudo is installed or not
-- name: "[PostgreSQL] - Debian only : checking sudo."
+- name: "[ENV] - Debian only : checking sudo."
   shell: "dpkg -l sudo"
   changed_when: False
-  register: command_result
+  register: nc_sudo_installed_result
   failed_when: False
   when: ansible_distribution == "Debian"
 
-- name: "[PostgreSQL] - rolling back to su."
+- name: "[ENV] - rolling back to su."
   set_fact: ansible_become_method="su"
-  when: command_result is defined and command_result.rc != 0
+  when: nc_sudo_installed_result is defined and nc_sudo_installed_result.rc != 0
 
 # fix for ubuntu 14.04 with permission issue for unprivileged user :
 - name: "[NC] - Adding ACL on trusty."
