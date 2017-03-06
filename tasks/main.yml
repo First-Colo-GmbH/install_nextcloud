@@ -65,6 +65,7 @@
     command: php occ app:list --output=json_pretty --no-warnings
     args:
       chdir: "{{ nextcloud_webroot }}"
+    become: true
     become_user: "{{ nextcloud_websrv_user }}"
     changed_when: false
     register: nc_apps_list

@@ -17,15 +17,21 @@ nextcloud_repository: "https://download.nextcloud.com/server" # Domain URL where
 nextcloud_archive_format: "zip" # zip | tar.bz2
 # nextcloud_full_url: "https://h2g2.com/downloads/42/my_nexcloud.zip" # specify directly a full URL to the archive if you don't like rules.
 
+# PHP 7 (debian stretch / apt with pinning) or PHP 5 (jessie)
+# if not defined, system default will be used
+# for performace reason, I suggest 7
+#nextcloud_php_version: 7
+# To force package installation from "stable/testing/sid" you can specify the distribution
+nextcloud_php_distribution: "{{ ansible_distribution_release }}"
 
 # [CONFIG]
-nextcloud_trusted_domain: ["{{ ansible_default_ipv4.address }}"]
+nextcloud_trusted_domain: [ "{{ ansible_default_ipv4.address }}" ]
 nextcloud_instance_name: "{{ nextcloud_trusted_domain | first }}"
 
 # nextcloud_websrv: "apache2" | "nginx"
 nextcloud_install_websrv: true
 nextcloud_websrv: "apache2"
-nextcloud_websrv_template: "templates/{{nextcloud_websrv}}_nc.j2"
+nextcloud_websrv_template: "templates/{{ nextcloud_websrv }}_nc.j2"
 nextcloud_webroot: "/opt/nextcloud"
 nextcloud_data_dir: "/var/ncdata"
 nextcloud_admin_name: "admin"
@@ -61,3 +67,4 @@ nextcloud_apps: {}
 nextcloud_websrv_user: "www-data"
 nextcloud_websrv_group: "www-data"
 #nextcloud_mysql_root_pwd: "secret"
+

@@ -13,11 +13,11 @@
 
 - name: "[ENV] - Load environment for OS using php 5"
   include_vars: "{{ role_path }}/defaults/php5_env.yml"
-  when: ansible_distribution_release in [ "trusty", "jessie" ]
+  when: ansible_distribution_release in [ "trusty", "jessie" ] or (nextcloud_php_version is defined and nextcloud_php_version == 5)
 
 - name: "[ENV] - Load environment for OS using php 7.0"
   include_vars: "{{ role_path }}/defaults/php7.0_env.yml"
-  when: ansible_distribution_release in [ "xenial" ]
+  when: ansible_distribution_release in [ "xenial", "stretch" ] or (nextcloud_php_version is defined and nextcloud_php_version == 7)
 
   # fix for debian not using sudo :
   # defining if sudo is installed or not

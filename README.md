@@ -136,7 +136,7 @@ nextcloud_version_special: "2017-01-01"
 ```
 ### Main configuration
 ```YAML
-nextcloud_trusted_domain: ["{{ ansible_default_ipv4.address }}"]
+nextcloud_trusted_domain: [ "{{ ansible_default_ipv4.address }}" ]
 ```
 The list of domains you will use to access the same Nextcloud instance.
 ```YAML
@@ -152,7 +152,7 @@ nextcloud_websrv: "apache2"
 ```
 The http server used by nextcloud. Available values are: **apache2** or **nginx**.
 ```YAML
-nextcloud_websrv_template: "templates/{{nextcloud_websrv}}_nc.j2"
+nextcloud_websrv_template: "templates/{{ nextcloud_websrv }}_nc.j2"
 ```
 The jinja2 template creating the instance configuration for your webserver.
 You can provide your own through this parameter.

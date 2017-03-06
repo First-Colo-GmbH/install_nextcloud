@@ -1,26 +1,59 @@
 ---
-- name: "[APACHE] -  Required and recommended packages are installed."
-  package: "name={{ item }} state=present"
-  with_items:
-    - apache2
-    - smbclient
-    - "libapache2-mod-php{{ php_ver }}"
-    - "php{{ php_ver }}-ldap"
-    - "php{{ php_ver }}-imap"
-    - "php{{ php_ver }}-gd"
-    - "php{{ php_ver }}-json"
-    - "php{{ php_ver }}-curl"
-    - "php{{ php_ver }}-intl"
-    - "php{{ php_ver }}-mcrypt"
-  notify: start apache
+- block:
+  # For Installations on CentOS or other non Debian/Ubuntu
+  - name: "[APACHE] -  Required and recommended packages are installed."
+    package: "name={{ item }} state=present"
+    with_items:
+      - apache2
+      - smbclient
+      - "libapache2-mod-php{{ php_ver }}"
+      - "php{{ php_ver }}-ldap"
+      - "php{{ php_ver }}-imap"
+      - "php{{ php_ver }}-gd"
+      - "php{{ php_ver }}-json"
+      - "php{{ php_ver }}-curl"
+      - "php{{ php_ver }}-intl"
+      - "php{{ php_ver }}-mcrypt"
+    notify: start apache
 
-- name: "[APACHE] -  Some other packages are installed."
-  package: "name={{ item }} state=present"
-  with_items: "{{ php_pkg_spe }}"
+  - name: "[APACHE] -  Some other pakages are installed."
+    package: "name={{ item }} state=present"
+    with_items: "{{ php_pkg_spe }}"
 
-- name: "[APACHE] -  APCu is installed."
-  package: "name={{ php_pkg_apcu }} state=present"
-  when : ansible_distribution_release not in [ "trusty" ]
+  - name: "[APACHE] -  APCu is installed."
+    package: "name={{ php_pkg_apcu }} state=present"
+    when : ansible_distribution_release not in [ "trusty" ]
+
+  # end of Block
+  when: ansible_distribution not in [ "Debian", "Ubuntu" ]
+
+- block:
+  # Debian Based installation with Pinning Support
+  - name: "[APACHE] -  Required and recommended packages are installed."
+    apt: "name={{ item }} state=latest default_release={{ nextcloud_php_distribution }}"
+    with_items:
+      - apache2
+      - smbclient
+      - "libapache2-mod-php{{ php_ver }}"
+      - "php{{ php_ver }}-ldap"
+      - "php{{ php_ver }}-imap"
+      - "php{{ php_ver }}-gd"
+      - "php{{ php_ver }}-json"
+      - "php{{ php_ver }}-curl"
+      - "php{{ php_ver }}-intl"
+      - "php{{ php_ver }}-mcrypt"
+    notify: start apache
+
+  - name: "[APACHE] -  Some other pakages are installed."
+    apt: "name={{ item }} state=latest default_release={{ nextcloud_php_distribution }}"
+    with_items: "{{ php_pkg_spe }}"
+
+  - name: "[APACHE] -  APCu is installed."
+    apt: "name={{ php_pkg_apcu }} state=latest default_release={{ nextcloud_php_distribution }}"
+    when : ansible_distribution_release not in [ "trusty" ]
+
+  # end of Block
+  when: ansible_distribution in [ "Debian", "Ubuntu" ]
 
 - block:
   # load APCu from backports as the default version for trusty is obsolete.
@@ -55,7 +88,7 @@
 - name: "[APACHE] -  generate Nextcloud configuration for apache"
   template:
     dest: /etc/apache2/sites-available/nc_{{ nextcloud_instance_name }}.conf
-    src: "{{nextcloud_websrv_template}}"
+    src: "{{ nextcloud_websrv_template }}"
   notify: reload apache
 
 - name: "[APACHE] -  Enable Nextcloud site in apache conf"
